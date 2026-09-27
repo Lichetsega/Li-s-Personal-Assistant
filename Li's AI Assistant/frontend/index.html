@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Voice Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fa-solid me-2 fa-robot"></i>
+                <span>Gemini AI Assistant</span>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <span class="pulse-dot"></span> Ready
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Voice Visualizer -->
+            <div class="visualizer-card">
+                <div class="voice-orb" id="voiceOrb">
+                    <div class="orb-core">
+                        <i class="fa-solid fa-microphone" id="micIcon"></i>
+                    </div>
+                    <div class="wave wave1"></div>
+                    <div class="wave wave2"></div>
+                    <div class="wave wave3"></div>
+                </div>
+                <p class="status-text" id="statusText">Click microphone or start typing to speak with Gemini AI</p>
+                
+                <div class="mic-controls">
+                    <button class="mic-btn" id="micBtn" title="Toggle Microphone Voice Listening">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Action Pills -->
+            <div class="quick-actions">
+                <button class="pill-btn" data-cmd="What is the weather in London?"><i class="fa-solid fa-cloud-sun"></i> Weather</button>
+                <button class="pill-btn" data-cmd="Tell me top news headlines"><i class="fa-regular fa-newspaper"></i> News</button>
+                <button class="pill-btn" data-cmd="Tell me a joke"><i class="fa-regular fa-face-laugh"></i> Joke</button>
+                <button class="pill-btn" data-cmd="Play jazz music"><i class="fa-solid fa-music"></i> Music</button>
+                <button class="pill-btn" data-cmd="Who is Albert Einstein?"><i class="fa-solid fa-book"></i> Wikipedia</button>
+                <button class="pill-btn" data-cmd="Show my tasks"><i class="fa-solid fa-list-check"></i> Tasks</button>
+            </div>
+
+            <!-- Chat Container -->
+            <div class="chat-container" id="chatContainer">
+                <div class="message assistant-message">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-content">
+                        Hello! I am your Gemini AI Virtual Assistant. How can I help you today?
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Input Bar -->
+        <footer class="footer-input">
+            <div class="input-wrapper">
+                <input type="text" id="userInput" placeholder="Type a message or command..." autocomplete="off">
+                <button id="sendBtn" class="send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
