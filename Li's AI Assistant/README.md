@@ -85,8 +85,8 @@ Li's AI Assistant/
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/python-voice-assistant.git
-   cd python-voice-assistant
+   git clone https://github.com/Lichetsega/Li-s-Personal-Assistant.git
+   cd Li's AI Assistant
    ```
 
 2. **Create & Activate Virtual Environment**:
@@ -153,6 +153,4 @@ Contributions, issues, and feature requests are welcome! Feel free to check out 
 
 ---
 
-## 📄 License
 
-This project is licensed under the **MIT License**.
