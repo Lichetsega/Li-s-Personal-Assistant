@@ -8,15 +8,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 
 def main():
     print("=" * 60)
-    print(" 🎙️  Gemini AI Virtual Voice Assistant (CLI Mode)")
+    print(" 🎙️  Li's AI Virtual Voice Assistant ")
     print(" Type 'voice' to speak, type your command, or type 'exit' to quit.")
+    print(" Voice responses will only speak aloud when using 'voice' mode!")
     print("=" * 60)
 
     assistant = AssistantCore()
     tts = HybridTTSEngine()
     stt = STTEngine()
 
-    initial_greeting = "Hello! I am your Gemini AI voice assistant. How can I help you today?"
+    initial_greeting = "Hello! I am Li's AI voice assistant. How can I help you today?"
     tts.speak(initial_greeting)
 
     while True:
@@ -30,18 +31,22 @@ def main():
                 tts.speak(farewell)
                 break
 
+            is_voice_mode = False
+
             if user_input.lower() == "voice":
                 user_input = stt.listen()
                 if not user_input:
                     print("No speech recognized. Returning to text mode.")
                     continue
+                is_voice_mode = True
 
             # Process command
             response = assistant.process_command(user_input)
             print(f"\n[Assistant]: {response}")
 
-            # Speak response using Hybrid TTS (Online gTTS -> Offline pyttsx3 fallback)
-            tts.speak(response)
+            # Speak response ONLY if input was given via voice!
+            if is_voice_mode:
+                tts.speak(response)
 
         except KeyboardInterrupt:
             print("\nExiting assistant...")

@@ -9,6 +9,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isListening = false;
     let recognition = null;
+    let availableVoices = [];
+
+    // Pre-fetch browser speech synthesis voices
+    function populateVoices() {
+        if ('speechSynthesis' in window) {
+            availableVoices = window.speechSynthesis.getVoices();
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        populateVoices();
+        window.speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    // Select preferred Female Voice
+    function getFemaleVoice() {
+        if (!availableVoices || availableVoices.length === 0) {
+            populateVoices();
+        }
+
+        // Priority list of female voice keywords
+        const femaleKeywords = ['zira', 'samantha', 'victoria', 'karen', 'hazel', 'eva', 'female', 'google us english'];
+        
+        for (const keyword of femaleKeywords) {
+            const match = availableVoices.find(v => v.name.toLowerCase().includes(keyword));
+            if (match) return match;
+        }
+
+        // Fallback: pick any English voice
+        return availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0] || null;
+    }
 
     // Initialize Web Speech Recognition if available
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -29,7 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const transcript = event.results[0][0].transcript;
             userInput.value = transcript;
             statusText.innerText = `Recognized: "${transcript}"`;
-            sendMessage(transcript);
+            // Trigger message with inputMode = 'voice'
+            sendMessage(transcript, 'voice');
         };
 
         recognition.onerror = (event) => {
@@ -68,13 +100,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Text-To-Speech Output via Web Speech Synthesis (Online / High Quality Browser Engine)
+    // Mode-aware Text-To-Speech Output via Web Speech Synthesis with Female Voice
     function speakText(text) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel(); // Stop any active speech
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 1.0;
-            utterance.pitch = 1.0;
+            utterance.pitch = 1.1; // Slightly higher pitch for natural female tone
+
+            const femaleVoice = getFemaleVoice();
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+                console.log("Speaking using female voice:", femaleVoice.name);
+            }
+
             window.speechSynthesis.speak(utterance);
         }
     }
@@ -98,8 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    async function sendMessage(text) {
-        const query = text || userInput.value.trim();
+    async function sendMessage(textOverride, inputMode = 'text') {
+        const query = textOverride || userInput.value.trim();
         if (!query) return;
 
         appendMessage('user', query);
@@ -119,8 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
             appendMessage('assistant', reply);
             statusText.innerText = 'Click microphone or start typing to speak with Gemini AI';
 
-            // Speak response using browser speech synthesis
-            speakText(reply);
+            // Speak ONLY if input came from voice! Keep typed input silent.
+            if (inputMode === 'voice') {
+                speakText(reply);
+            }
         } catch (error) {
             console.error("Error communicating with server:", error);
             appendMessage('assistant', "Sorry, I lost connection to the server.");
@@ -129,9 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Event Listeners
-    sendBtn.addEventListener('click', () => sendMessage());
+    sendBtn.addEventListener('click', () => sendMessage(null, 'text'));
     userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+        if (e.key === 'Enter') sendMessage(null, 'text');
     });
 
     micBtn.addEventListener('click', toggleListening);
@@ -139,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pillBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const cmd = btn.getAttribute('data-cmd');
-            sendMessage(cmd);
+            sendMessage(cmd, 'text');
         });
     });
 });

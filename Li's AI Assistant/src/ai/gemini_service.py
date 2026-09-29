@@ -9,14 +9,9 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="google.generat
 # Ensure root project path is included in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.config import config
+from src.memory.context_builder import ContextBuilder
 
 logger = logging.getLogger("GeminiService")
-
-SYSTEM_INSTRUCTION = (
-    "You are Li's Voice AI Assistant, a helpful, polite, and intelligent virtual assistant. "
-    "Because your responses will be read aloud via Text-to-Speech, keep your responses concise, "
-    "clear, natural, and friendly. Avoid lengthy formatting, markdown tables, or excessive code unless explicitly asked."
-)
 
 MODEL_CANDIDATES = [
     "gemini-2.5-flash",
@@ -31,6 +26,7 @@ class GeminiService:
         self.api_key = api_key or config.GEMINI_API_KEY
         self.client = None
         self.sdk_type = None
+        self.context_builder = ContextBuilder()
         self._initialize_client()
 
     def _initialize_client(self):
@@ -60,13 +56,15 @@ class GeminiService:
             self.client = None
 
     def generate_response(self, user_prompt: str) -> str:
-        """Generate response from Gemini AI model given user prompt."""
+        """Generate response from Gemini AI model with dynamic multi-tier context."""
         if not self.client:
             return (
                 "Gemini AI API key is missing or invalid. "
                 "Please add your valid GEMINI_API_KEY in the .env file to enable full AI responses."
             )
 
+        # Build dynamic system instruction with User Profile + Memories + Live Environment
+        sys_instruction = self.context_builder.build_system_instruction(user_prompt)
         last_error = None
 
         if self.sdk_type == "google-genai":
@@ -74,7 +72,7 @@ class GeminiService:
                 try:
                     response = self.client.models.generate_content(
                         model=model_name,
-                        contents=f"{SYSTEM_INSTRUCTION}\n\nUser: {user_prompt}"
+                        contents=f"{sys_instruction}\n\nUser: {user_prompt}"
                     )
                     if response and response.text:
                         return response.text.strip()
@@ -87,7 +85,7 @@ class GeminiService:
                 try:
                     model = self.client.GenerativeModel(
                         model_name=model_name,
-                        system_instruction=SYSTEM_INSTRUCTION
+                        system_instruction=sys_instruction
                     )
                     response = model.generate_content(user_prompt)
                     if response and response.text:

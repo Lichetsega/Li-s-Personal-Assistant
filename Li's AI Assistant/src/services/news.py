@@ -6,7 +6,7 @@ import logging
 
 # Ensure root project path is included in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from src.config import config
+from config import config
 
 logger = logging.getLogger("NewsService")
 

@@ -1,7 +1,12 @@
-# AI & Gemini SDK
+# AI & Gemini SDKs (Primary + Fallback)
 google-genai>=0.1.1
+google-generativeai>=0.4.1
 
-# Web Framework & Real-time WebSockets
+# Data Validation & Pydantic Memory Schemas
+pydantic>=2.6.4
+pydantic-settings>=2.2.1
+
+# Web Framework & Real-Time WebSockets
 fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
 websockets>=12.0
@@ -16,5 +21,3 @@ gTTS>=2.5.1
 requests>=2.31.0
 pyjokes>=0.6.0
 python-dotenv>=1.0.1
-pydantic>=2.6.4
-pydantic-settings>=2.2.1

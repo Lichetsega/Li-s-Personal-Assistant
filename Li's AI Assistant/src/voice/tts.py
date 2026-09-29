@@ -8,8 +8,8 @@ logger = logging.getLogger("TTSEngine")
 class HybridTTSEngine:
     """
     Hybrid Text-to-Speech Engine:
-    Attempts Online gTTS (high quality) first.
-    Automatically falls back to Offline pyttsx3 if offline or connection fails.
+    Configured with a preferred Female voice.
+    Attempts Online gTTS first, with offline pyttsx3 female voice fallback.
     """
     def __init__(self, voice_rate: int = 175):
         self.voice_rate = voice_rate
@@ -21,7 +21,25 @@ class HybridTTSEngine:
             import pyttsx3
             self.pyttsx_engine = pyttsx3.init()
             self.pyttsx_engine.setProperty('rate', self.voice_rate)
-            logger.info("Offline pyttsx3 TTS engine initialized.")
+            
+            # Select Female Voice
+            voices = self.pyttsx_engine.getProperty('voices')
+            female_voice = None
+            for v in voices:
+                name_lower = v.name.lower()
+                if any(k in name_lower for k in ["zira", "hazel", "female", "eva", "samantha", "aria", "jenny"]):
+                    female_voice = v
+                    break
+            
+            if female_voice:
+                self.pyttsx_engine.setProperty('voice', female_voice.id)
+                logger.info(f"Selected Female pyttsx3 Voice: {female_voice.name}")
+            elif len(voices) > 1:
+                self.pyttsx_engine.setProperty('voice', voices[1].id)
+                logger.info(f"Selected fallback secondary pyttsx3 Voice: {voices[1].name}")
+            else:
+                logger.info("Using default pyttsx3 voice.")
+                
         except Exception as e:
             logger.warning(f"Could not initialize pyttsx3 offline engine: {e}")
 
@@ -29,7 +47,7 @@ class HybridTTSEngine:
         """Speak using offline pyttsx3 engine."""
         if self.pyttsx_engine:
             try:
-                logger.info("Using OFFLINE pyttsx3 engine...")
+                logger.info("Using OFFLINE pyttsx3 female voice engine...")
                 self.pyttsx_engine.say(text)
                 self.pyttsx_engine.runAndWait()
                 return True
@@ -63,7 +81,6 @@ class HybridTTSEngine:
                 pygame.mixer.quit()
             except Exception as pg_err:
                 logger.debug(f"Pygame playback failed: {pg_err}. Trying Windows Media Fallback...")
-                # Windows system audio fallback
                 if os.name == 'nt':
                     os.system(f'start /min "" "{temp_filename}"')
                     time.sleep(2)
@@ -75,24 +92,23 @@ class HybridTTSEngine:
 
             return True
         except Exception as e:
-            logger.warning(f"Online gTTS failed (network issue or library missing): {e}")
+            logger.warning(f"Online gTTS failed: {e}")
             return False
 
     def speak(self, text: str):
         """
         Main entry point for speaking text.
         Primary: Online gTTS
-        Fallback: Offline pyttsx3
+        Fallback: Offline pyttsx3 Female Voice
         """
         if not text or not text.strip():
             return
 
         print(f"Assistant Voice: {text}")
         
-        # Try primary online TTS
         success = self.speak_online_gtts(text)
         if not success:
-            logger.info("Switching to offline TTS fallback...")
+            logger.info("Switching to offline female TTS fallback...")
             success = self.speak_offline(text)
             if not success:
                 logger.error("Both Online gTTS and Offline pyttsx3 failed to speak.")
