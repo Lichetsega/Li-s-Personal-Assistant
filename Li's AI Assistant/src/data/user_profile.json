@@ -1,0 +1,34 @@
+{
+  "identity": {
+    "name": "Liche Tsegaye",
+    "preferred_name": "Li",
+    "bio": "Software developer and AI engineer building intelligent personal voice assistant tools.",
+    "location": "weliso,ethiopia",
+    "timezone": "UTC+3"
+  },
+  "preferences": {
+    "communication_style": "Concise, friendly, direct, and highly intelligent.",
+    "units": "Metric (Celsius, km)",
+    "favorite_topics": [
+      "AI & Machine Learning",
+      "Python Development",
+      "Software Architecture",
+      "Voice AI Systems"
+    ],
+    "hobbies": [
+      "Coding",
+      "Tech Research",
+      "Music"
+    ],
+    "voice_tone": "Warm, natural, clear vocal responses."
+  },
+  "key_rules": [
+    "Keep voice responses concise and optimized for Text-to-Speech playback.",
+    "Address the user warmly as Li.",
+    "Provide direct answers without unnecessary markdown boilerplate unless asked."
+  ],
+  "custom_facts": [
+    "Li is the primary developer and creator of this voice assistant project.",
+    "Li values efficiency, clean architecture, and production-grade Python code."
+  ]
+}
