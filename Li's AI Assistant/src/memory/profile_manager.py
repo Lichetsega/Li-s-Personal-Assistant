@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 import logging
 from typing import Dict, Any
 
@@ -10,10 +11,14 @@ logger = logging.getLogger("ProfileManager")
 DEFAULT_PROFILE_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "data", "user_profile.json")
 )
+EXAMPLE_PROFILE_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "user_profile.example.json")
+)
 
 class ProfileManager:
     """
     Manages loading, saving, validating, and retrieving Li's User Profile.
+    Guarantees privacy by separating local personal profile from git-tracked template.
     """
     def __init__(self, profile_path: str = None):
         self.profile_path = profile_path or DEFAULT_PROFILE_PATH
@@ -21,6 +26,15 @@ class ProfileManager:
 
     def _load_or_create_profile(self) -> UserProfile:
         os.makedirs(os.path.dirname(self.profile_path), exist_ok=True)
+
+        # If user_profile.json does not exist, copy from user_profile.example.json if available
+        if not os.path.exists(self.profile_path):
+            if os.path.exists(EXAMPLE_PROFILE_PATH):
+                try:
+                    shutil.copyfile(EXAMPLE_PROFILE_PATH, self.profile_path)
+                    logger.info(f"Initialized personal user_profile.json from template at {EXAMPLE_PROFILE_PATH}")
+                except Exception as e:
+                    logger.warning(f"Could not copy example profile: {e}")
 
         if not os.path.exists(self.profile_path):
             logger.info(f"User profile file not found. Creating default profile at {self.profile_path}")

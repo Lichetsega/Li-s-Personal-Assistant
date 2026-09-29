@@ -3,11 +3,18 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environment variables & secrets (CRITICAL for GitHub)
+# Environment variables & API keys (CRITICAL FOR GITHUB SECURITY)
 .env
 .env.local
 .env.*.local
 !.env.example
+
+# Local Personal Data & Memory Database (CRITICAL FOR PRIVACY)
+src/data/user_profile.json
+src/data/memory.db
+src/data/*.db
+src/data/*.json
+!src/data/user_profile.example.json
 
 # Virtual Environments
 venv/

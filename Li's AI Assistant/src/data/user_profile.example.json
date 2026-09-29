@@ -1,0 +1,31 @@
+{
+  "identity": {
+    "name": "Your Name",
+    "preferred_name": "User",
+    "bio": "Software developer and tech enthusiast.",
+    "location": "City, Country",
+    "timezone": "UTC"
+  },
+  "preferences": {
+    "communication_style": "Concise, friendly, direct, and intelligent.",
+    "units": "Metric (Celsius, km)",
+    "favorite_topics": [
+      "Technology",
+      "Programming",
+      "AI Assistants"
+    ],
+    "hobbies": [
+      "Coding",
+      "Reading"
+    ],
+    "voice_tone": "Warm, natural, clear vocal responses."
+  },
+  "key_rules": [
+    "Keep voice responses concise and optimized for Text-to-Speech playback.",
+    "Address the user warmly.",
+    "Provide direct answers without unnecessary markdown boilerplate."
+  ],
+  "custom_facts": [
+    "User is building a custom Python voice assistant."
+  ]
+}
