@@ -1,0 +1,12 @@
+{
+  "name": "Li",
+  "bio": "Software engineer and tech enthusiast who prefers direct, concise responses.",
+  "communication_style": "Friendly, efficient, and professional",
+  "preferred_voice": "Female",
+  "interests": ["Python", "Artificial Intelligence", "Voice Assistants", "System Architecture"],
+  "custom_rules": [
+    "Keep responses concise unless detailed analysis is requested.",
+    "Address the user by name periodically.",
+    "Prefer metric units for weather."
+  ]
+}

@@ -10,6 +10,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="google.generat
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.config import config
 from src.memory.context_builder import ContextBuilder
+from src.ai.tools import TOOL_FUNCTIONS
 
 logger = logging.getLogger("GeminiService")
 
@@ -56,14 +57,14 @@ class GeminiService:
             self.client = None
 
     def generate_response(self, user_prompt: str) -> str:
-        """Generate response from Gemini AI model with dynamic multi-tier context."""
+        """Generate response from Gemini AI model with dynamic multi-tier context, history, RAG, and native tools."""
         if not self.client:
             return (
                 "Gemini AI API key is missing or invalid. "
                 "Please add your valid GEMINI_API_KEY in the .env file to enable full AI responses."
             )
 
-        # Build dynamic system instruction with User Profile + Memories + Live Environment
+        # Build dynamic system instruction with Profile + Memories + Notes RAG + Multi-Turn History + Live Environment
         sys_instruction = self.context_builder.build_system_instruction(user_prompt)
         last_error = None
 

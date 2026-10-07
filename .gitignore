@@ -1,0 +1,24 @@
+# Environment & Secrets
+.env
+*.env
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+
+# Local User Data & Memory (Git Privacy Protection)
+src/data/user_profile.json
+src/data/memory.db
+src/data/notes/*
+!src/data/notes/example_notes.md
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Li's AI Assistant - Personal Intelligence Engine</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="icon">🎙️</span>
+        <h1>Li's Personal Assistant</h1>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot"></span> Online
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="chat-container">
+      <div class="chat-messages" id="chat-messages">
+        <div class="message assistant">
+          <div class="avatar">🤖</div>
+          <div class="bubble">
+            Hello Li! I am your AI Virtual Assistant. How can I help you today? You can ask me questions, check notes, weather, news, or add reminders!
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Input -->
+      <div class="input-area">
+        <button id="voice-btn" class="mic-btn" title="Speak into Microphone">
+          🎤
+        </button>
+        <input type="text" id="user-input" placeholder="Type a message or note query..." autocomplete="off">
+        <button id="send-btn" class="send-btn">Send</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 import os
 import logging
+import asyncio
+from typing import List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
@@ -12,13 +14,31 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger("FastAPIServer")
 
 app = FastAPI(
-    title="Gemini AI Voice Assistant",
+    title="Li's AI Voice Assistant",
     description="Interactive Web Interface powered by FastAPI and Gemini AI",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # Initialize Assistant Engine
 assistant = AssistantCore()
+
+# Active WebSocket connections pool
+active_websockets: List[WebSocket] = []
+
+def notify_websockets_reminder(alert_msg: str):
+    """Callback triggered when a proactive background reminder fires."""
+    logger.info(f"Broadcasting proactive reminder alert: {alert_msg}")
+    for ws in active_websockets:
+        try:
+            # Use asyncio to schedule send_text across active connections
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.run_coroutine_threadsafe(ws.send_text(f"[PROACTIVE_REMINDER] {alert_msg}"), loop)
+        except Exception as e:
+            logger.error(f"Error sending proactive alert to WebSocket: {e}")
+
+# Register reminder callback
+assistant.register_reminder_callback(notify_websockets_reminder)
 
 # Mount static frontend assets
 frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
@@ -51,9 +71,10 @@ async def chat_endpoint(request: ChatRequest):
 @app.websocket("/ws/chat")
 async def websocket_chat_endpoint(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time bidirectional audio/text communication.
+    WebSocket endpoint for real-time bidirectional audio/text communication & proactive alerts.
     """
     await websocket.accept()
+    active_websockets.append(websocket)
     logger.info("WebSocket client connected.")
     try:
         while True:
@@ -62,8 +83,12 @@ async def websocket_chat_endpoint(websocket: WebSocket):
             reply = assistant.process_command(data)
             await websocket.send_text(reply)
     except WebSocketDisconnect:
+        if websocket in active_websockets:
+            active_websockets.remove(websocket)
         logger.info("WebSocket client disconnected.")
     except Exception as e:
+        if websocket in active_websockets:
+            active_websockets.remove(websocket)
         logger.error(f"WebSocket error: {e}")
 
 if __name__ == "__main__":

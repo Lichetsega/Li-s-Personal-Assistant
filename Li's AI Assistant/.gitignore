@@ -16,6 +16,10 @@ src/data/*.db
 src/data/*.json
 !src/data/user_profile.example.json
 
+# Local Personal Notes & Documents RAG (CRITICAL FOR PRIVACY)
+src/data/notes/*
+!src/data/notes/example_notes.md
+
 # Virtual Environments
 venv/
 .venv/
