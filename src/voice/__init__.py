@@ -1,1 +1,1 @@
-# Voice subpackage initializer
+# Voice package initialization

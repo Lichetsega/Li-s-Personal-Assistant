@@ -1,37 +1,95 @@
+import os
 import json
 import shutil
-from pathlib import Path
-from src.config import USER_PROFILE_PATH, USER_PROFILE_EXAMPLE_PATH
-from src.memory.schema import UserProfile
+import logging
+from typing import Dict, Any
+
+from src.memory.schema import UserProfile, HAS_PYDANTIC
+
+logger = logging.getLogger("ProfileManager")
+
+DEFAULT_PROFILE_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "user_profile.json")
+)
+EXAMPLE_PROFILE_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "user_profile.example.json")
+)
 
 class ProfileManager:
-    def __init__(self, profile_path: Path = USER_PROFILE_PATH, example_path: Path = USER_PROFILE_EXAMPLE_PATH):
-        self.profile_path = profile_path
-        self.example_path = example_path
-        self._ensure_profile_exists()
+    """
+    Manages loading, saving, validating, and retrieving Li's User Profile.
+    Guarantees privacy by separating local personal profile from git-tracked template.
+    """
+    def __init__(self, profile_path: str = None):
+        self.profile_path = profile_path or DEFAULT_PROFILE_PATH
+        self.profile: UserProfile = self._load_or_create_profile()
 
-    def _ensure_profile_exists(self):
-        if not self.profile_path.exists():
-            if self.example_path.exists():
-                shutil.copy(self.example_path, self.profile_path)
+    def _load_or_create_profile(self) -> UserProfile:
+        os.makedirs(os.path.dirname(self.profile_path), exist_ok=True)
+
+        # If user_profile.json does not exist, copy from user_profile.example.json if available
+        if not os.path.exists(self.profile_path):
+            if os.path.exists(EXAMPLE_PROFILE_PATH):
+                try:
+                    shutil.copyfile(EXAMPLE_PROFILE_PATH, self.profile_path)
+                    logger.info(f"Initialized personal user_profile.json from template at {EXAMPLE_PROFILE_PATH}")
+                except Exception as e:
+                    logger.warning(f"Could not copy example profile: {e}")
+
+        if not os.path.exists(self.profile_path):
+            logger.info(f"User profile file not found. Creating default profile at {self.profile_path}")
+            profile = UserProfile()
+            self.save_profile(profile)
+            return profile
+
+        try:
+            with open(self.profile_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if HAS_PYDANTIC:
+                profile = UserProfile.model_validate(data) if hasattr(UserProfile, "model_validate") else UserProfile(**data)
             else:
-                default_profile = UserProfile()
-                self.save_profile(default_profile)
-
-    def load_profile(self) -> UserProfile:
-        try:
-            if self.profile_path.exists():
-                with open(self.profile_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    return UserProfile(**data)
+                profile = UserProfile()
+            logger.info("Successfully loaded User Profile.")
+            return profile
         except Exception as e:
-            print(f"[ProfileManager] Warning: Error loading user profile: {e}")
-        return UserProfile()
+            logger.error(f"Error loading User Profile from {self.profile_path}: {e}. Falling back to default.")
+            profile = UserProfile()
+            return profile
 
-    def save_profile(self, profile: UserProfile):
+    def get_profile(self) -> UserProfile:
+        return self.profile
+
+    def save_profile(self, profile: UserProfile = None) -> bool:
+        if profile:
+            self.profile = profile
+
         try:
-            self.profile_path.parent.mkdir(parents=True, exist_ok=True)
+            os.makedirs(os.path.dirname(self.profile_path), exist_ok=True)
+            if HAS_PYDANTIC and hasattr(self.profile, "model_dump"):
+                data = self.profile.model_dump()
+            elif HAS_PYDANTIC and hasattr(self.profile, "dict"):
+                data = self.profile.dict()
+            else:
+                data = {
+                    "identity": self.profile.identity.__dict__,
+                    "preferences": self.profile.preferences.__dict__,
+                    "key_rules": self.profile.key_rules,
+                    "custom_facts": self.profile.custom_facts
+                }
+
             with open(self.profile_path, "w", encoding="utf-8") as f:
-                json.dump(profile.model_dump(), f, indent=2)
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"Saved User Profile to {self.profile_path}")
+            return True
         except Exception as e:
-            print(f"[ProfileManager] Error saving user profile: {e}")
+            logger.error(f"Failed to save User Profile to {self.profile_path}: {e}")
+            return False
+
+    def update_custom_fact(self, fact: str) -> bool:
+        """Adds a new key fact to Li's custom facts list."""
+        if fact and fact not in self.profile.custom_facts:
+            self.profile.custom_facts.append(fact)
+            return self.save_profile()
+        return False

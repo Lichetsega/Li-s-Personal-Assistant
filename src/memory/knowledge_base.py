@@ -1,63 +1,100 @@
 import os
-import json
-from pathlib import Path
-from typing import List
-from src.config import NOTES_DIR
-from src.memory.schema import KnowledgeExcerpt
+import glob
+import logging
+from typing import List, Dict, Any
+
+logger = logging.getLogger("KnowledgeBase")
+
+DEFAULT_NOTES_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "notes")
+)
 
 class KnowledgeBase:
-    def __init__(self, notes_dir: Path = NOTES_DIR):
-        self.notes_dir = notes_dir
-        self.notes_dir.mkdir(parents=True, exist_ok=True)
+    """
+    RAG (Retrieval-Augmented Generation) Engine for local personal documents.
+    Indexes text, markdown, and JSON files in src/data/notes/ for semantic query lookup.
+    """
+    def __init__(self, notes_dir: str = None):
+        self.notes_dir = notes_dir or DEFAULT_NOTES_DIR
+        os.makedirs(self.notes_dir, exist_ok=True)
+        self._ensure_example_note()
 
-    def search_notes(self, query: str, top_k: int = 3) -> List[KnowledgeExcerpt]:
-        results: List[KnowledgeExcerpt] = []
-        if not self.notes_dir.exists():
-            return results
+    def _ensure_example_note(self):
+        """Creates an example template note if directory is empty."""
+        example_path = os.path.join(self.notes_dir, "example_notes.md")
+        if not os.path.exists(example_path) and not glob.glob(os.path.join(self.notes_dir, "*.*")):
+            try:
+                with open(example_path, "w", encoding="utf-8") as f:
+                    f.write("# Li's Project Notes\n\n- Personal Voice AI Assistant built with Python and Gemini.\n- Key Goals: High performance, multi-tier memory, proactive reminders.\n")
+                logger.info(f"Created initial example note at {example_path}")
+            except Exception as e:
+                logger.warning(f"Could not create example note: {e}")
 
-        query_terms = [t.lower() for t in query.split() if len(t) > 2]
+    def load_documents(self) -> List[Dict[str, str]]:
+        """Scans notes directory and returns loaded document chunks with metadata."""
+        documents = []
+        supported_extensions = ["*.txt", "*.md", "*.json", "*.log"]
         
-        for file_path in self.notes_dir.glob("*"):
-            if file_path.suffix.lower() in [".md", ".txt", ".json", ".markdown"]:
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        text = f.read()
+        filepaths = []
+        for ext in supported_extensions:
+            filepaths.extend(glob.glob(os.path.join(self.notes_dir, ext)))
+            filepaths.extend(glob.glob(os.path.join(self.notes_dir, "**", ext), recursive=True))
 
-                    # Simple keyword frequency relevance score
-                    text_lower = text.lower()
-                    score = 0.0
-                    for term in query_terms:
-                        score += text_lower.count(term) * 1.5
+        filepaths = list(set(filepaths))
 
-                    # If query is short or score > 0, include excerpt
-                    if score > 0 or not query_terms:
-                        # Extract most relevant paragraph or top chunk
-                        lines = [line.strip() for line in text.splitlines() if line.strip()]
-                        excerpt_text = "\n".join(lines[:15])  # Top excerpt preview
-                        
-                        results.append(
-                            KnowledgeExcerpt(
-                                file_name=file_path.name,
-                                file_path=str(file_path),
-                                content=excerpt_text,
-                                relevance_score=score if query_terms else 1.0
-                            )
-                        )
-                except Exception as e:
-                    print(f"[KnowledgeBase] Warning: Failed to read note {file_path}: {e}")
+        for path in filepaths:
+            try:
+                filename = os.path.basename(path)
+                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    content = f.read().strip()
+                
+                if content:
+                    # Split long documents into chunks of ~500 chars for precise retrieval
+                    chunks = [content[i:i+500] for i in range(0, len(content), 400)]
+                    for idx, chunk in enumerate(chunks):
+                        documents.append({
+                            "filename": filename,
+                            "chunk_id": idx,
+                            "content": chunk
+                        })
+            except Exception as e:
+                logger.error(f"Error loading document {path}: {e}")
+
+        return documents
+
+    def search(self, query: str, top_k: int = 3) -> str:
+        """
+        Searches personal documents for passages matching keywords in the query.
+        Returns formatted context string.
+        """
+        if not query or not query.strip():
+            return ""
+
+        documents = self.load_documents()
+        if not documents:
+            return ""
+
+        query_keywords = [k.lower() for k in query.split() if len(k) > 2]
+        if not query_keywords:
+            return ""
+
+        scored_docs = []
+        for doc in documents:
+            content_lower = doc["content"].lower()
+            # Calculate keyword match frequency score
+            score = sum(content_lower.count(kw) for kw in query_keywords)
+            if score > 0:
+                scored_docs.append((score, doc))
 
         # Sort by relevance score descending
-        results.sort(key=lambda x: x.relevance_score, reverse=True)
-        return results[:top_k]
+        scored_docs.sort(key=lambda x: x[0], reverse=True)
+        top_matches = scored_docs[:top_k]
 
-    def list_notes(self) -> List[str]:
-        if not self.notes_dir.exists():
-            return []
-        return [f.name for f in self.notes_dir.glob("*") if f.is_file()]
+        if not top_matches:
+            return ""
 
-    def read_note(self, filename: str) -> str:
-        target_path = self.notes_dir / filename
-        if target_path.exists() and target_path.is_file():
-            with open(target_path, "r", encoding="utf-8") as f:
-                return f.read()
-        return f"Note '{filename}' not found."
+        result = "--- PERSONAL DOCUMENTS & NOTES CONTEXT ---\n"
+        for score, doc in top_matches:
+            result += f"• [File: {doc['filename']}] {doc['content'].strip()}\n"
+        
+        return result

@@ -1,1 +1,1 @@
-# AI subpackage initializer
+# AI module package initialization

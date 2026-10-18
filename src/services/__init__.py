@@ -1,1 +1,1 @@
-# Services subpackage initializer
+# Services package initialization

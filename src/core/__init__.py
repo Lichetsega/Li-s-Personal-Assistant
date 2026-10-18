@@ -1,1 +1,1 @@
-# Core subpackage initializer
+# Core package initialization

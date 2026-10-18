@@ -1,12 +1,17 @@
-# Li's Assistant - System Notes & Preferences
+# Li's Assistant - identity and biography
 
-## Personal Preferences
-- **Working Hours**: 9:00 AM - 6:00 PM
-- **Primary Tech Stack**: Python, FastAPI, React, SQLite, Google Gemini AI
-- **Tone**: Clear, concise, helpful, and polite.
+## identity
+- **Full Name** : Liche Tsegaye 
+- **Grandfather name**: ....
+- **Location**: I was born and raised in ...
+you can write anything either formally or informally 
+## my friends 
+-  i am a .....
+- my favorite part of my day is ................
+- i can .....
+- i hate to ....
+## hobbies
+i like to ......
 
-## Project Roadmap
-1. Build Multi-Tier Memory Store (SQLite + Profile + RAG Notes).
-2. Integrate Google Gemini AI Function Calling.
-3. Build Voice Speech TTS Engine & Speech Recognition.
-4. Launch FastAPI Server & Frontend Dashboard.
+
+## create as much file as you can and put you informations in this kind of formats

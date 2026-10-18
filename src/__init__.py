@@ -1,1 +1,1 @@
-# src package initializer
+# Package initialization for src

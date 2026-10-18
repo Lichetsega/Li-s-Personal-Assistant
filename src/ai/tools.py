@@ -1,63 +1,93 @@
-from typing import Callable, Dict, Any, List
-from src.services.weather import WeatherService
-from src.services.news import NewsService
-from src.services.wikipedia_service import WikipediaService
-from src.services.jokes import JokeService
-from src.services.task_manager import TaskManager
-from src.services.scheduler import ReminderScheduler
+import logging
+from typing import Dict, Any, Callable
 
-class ToolRegistry:
-    def __init__(
-        self,
-        weather_service: WeatherService = None,
-        news_service: NewsService = None,
-        wiki_service: WikipediaService = None,
-        joke_service: JokeService = None,
-        task_manager: TaskManager = None,
-        scheduler: ReminderScheduler = None
-    ):
-        self.weather_service = weather_service or WeatherService()
-        self.news_service = news_service or NewsService()
-        self.wiki_service = wiki_service or WikipediaService()
-        self.joke_service = joke_service or JokeService()
-        self.task_manager = task_manager or TaskManager()
-        self.scheduler = scheduler or ReminderScheduler()
+from src.services.weather import get_weather
+from src.services.news import get_news
+from src.services.task_manager import add_task, get_tasks, clear_tasks
 
-    def get_tool_functions(self) -> List[Callable]:
-        return [
-            self.get_weather,
-            self.get_news,
-            self.search_wikipedia,
-            self.tell_joke,
-            self.add_task,
-            self.list_tasks,
-            self.set_reminder
-        ]
+logger = logging.getLogger("GeminiTools")
 
-    def get_weather(self, city: str = "London") -> str:
-        """Get current weather information for a specified city."""
-        return self.weather_service.get_weather(city)
+# 1. Weather Tool
+def tool_get_weather(city: str = "London") -> str:
+    """Fetch current real-time weather information for a specified city."""
+    return get_weather(city)
 
-    def get_news(self, topic: str = "general") -> str:
-        """Get top news headlines for a specified topic."""
-        return self.news_service.get_top_headlines(topic)
+# 2. News Tool
+def tool_get_news(category: str = "general") -> str:
+    """Fetch top current news headlines."""
+    return get_news(limit=4)
 
-    def search_wikipedia(self, query: str) -> str:
-        """Search Wikipedia for a summary of a person, place, or topic."""
-        return self.wiki_service.search_summary(query)
+# 4. Task Management Tools
+def tool_add_task(task_text: str) -> str:
+    """Add a new task or reminder item to Li's task list."""
+    return add_task(task_text)
 
-    def tell_joke(self) -> str:
-        """Tell a funny programming or general joke."""
-        return self.joke_service.get_joke()
+def tool_get_tasks() -> str:
+    """List all current active tasks for Li."""
+    return get_tasks()
 
-    def add_task(self, task: str) -> str:
-        """Add a new task to the user's personal task list."""
-        return self.task_manager.add_task(task)
+def tool_clear_tasks() -> str:
+    """Clear all completed tasks from Li's task list."""
+    return clear_tasks()
 
-    def list_tasks(self) -> str:
-        """List all active tasks in the user's task list."""
-        return self.task_manager.list_tasks()
 
-    def set_reminder(self, text: str, seconds: int) -> str:
-        """Set a proactive reminder timer with text description and duration in seconds."""
-        return self.scheduler.schedule_reminder(text, seconds)
+# Function Registry Mapping for Gemini Function Calling Execution
+TOOL_FUNCTIONS: Dict[str, Callable] = {
+    "get_weather": tool_get_weather,
+    "get_news": tool_get_news,
+    "add_task": tool_add_task,
+    "get_tasks": tool_get_tasks,
+    "clear_tasks": tool_clear_tasks,
+}
+
+# Declarative Tool Schema for Google Gemini Function Calling
+GEMINI_TOOL_DECLARATIONS = [
+    {
+        "name": "get_weather",
+        "description": "Fetch real-time weather updates for a specified city.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "city": {"type": "STRING", "description": "City name, e.g. London, Tokyo, Paris"}
+            },
+            "required": ["city"]
+        }
+    },
+    {
+        "name": "get_news",
+        "description": "Fetch top current news headlines.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "category": {"type": "STRING", "description": "News category e.g. general, technology"}
+            }
+        }
+    },
+    {
+        "name": "add_task",
+        "description": "Add a new task or reminder item to Li's task list.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "task_text": {"type": "STRING", "description": "Task description"}
+            },
+            "required": ["task_text"]
+        }
+    },
+    {
+        "name": "get_tasks",
+        "description": "Get all current active tasks on Li's task list.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {}
+        }
+    },
+    {
+        "name": "clear_tasks",
+        "description": "Clear all tasks from Li's task list.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {}
+        }
+    }
+]

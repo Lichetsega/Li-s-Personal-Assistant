@@ -1,33 +1,45 @@
+import os
+import sys
 import requests
 import xml.etree.ElementTree as ET
-from src.config import NEWS_API_KEY
+import logging
 
-class NewsService:
-    def get_top_headlines(self, topic: str = "general") -> str:
-        # 1. Try NewsAPI if key available
-        if NEWS_API_KEY and NEWS_API_KEY != "your_news_api_key_here":
-            try:
-                url = f"https://newsapi.org/v2/top-headlines?category={topic}&language=en&apiKey={NEWS_API_KEY}"
-                resp = requests.get(url, timeout=5)
-                if resp.status_code == 200:
-                    articles = resp.json().get("articles", [])[:3]
-                    if articles:
-                        lines = [f"- {a['title']}" for a in articles]
-                        return f"Top headlines for {topic}:\n" + "\n".join(lines)
-            except Exception as e:
-                print(f"[NewsService] NewsAPI error: {e}")
+# Ensure root project path is included in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from config import config
 
-        # 2. Fallback to BBC RSS feeds
+logger = logging.getLogger("NewsService")
+
+def get_news(limit: int = 5) -> str:
+    """
+    Fetch top news headlines.
+    Uses NewsAPI if API key is set, otherwise falls back to RSS feed.
+    """
+    api_key = config.NEWS_API_KEY
+    if api_key:
         try:
-            url = "http://feeds.bbci.co.uk/news/rss.xml"
-            resp = requests.get(url, timeout=5)
-            if resp.status_code == 200:
-                root = ET.fromstring(resp.content)
-                items = root.findall("./channel/item")[:3]
-                titles = [f"- {item.find('title').text}" for item in items if item.find("title") is not None]
-                if titles:
-                    return "Top BBC News Headlines:\n" + "\n".join(titles)
+            url = f"https://newsapi.org/v2/top-headlines?country=us&pageSize={limit}&apiKey={api_key}"
+            res = requests.get(url, timeout=5)
+            data = res.json()
+            if data.get("status") == "ok":
+                articles = data.get("articles", [])[:limit]
+                headlines = [f"{i+1}. {art['title']}" for i, art in enumerate(articles)]
+                return "Here are the top news headlines:\n" + "\n".join(headlines)
         except Exception as e:
-            print(f"[NewsService] RSS error: {e}")
+            logger.warning(f"NewsAPI failed: {e}. Trying fallback...")
 
-        return "Unable to retrieve top news headlines at the moment."
+    # Fallback to BBC RSS feed
+    try:
+        url = "http://feeds.bbci.co.uk/news/rss.xml"
+        res = requests.get(url, timeout=5)
+        if res.status_code == 200:
+            root = ET.fromstring(res.content)
+            headlines = []
+            for i, item in enumerate(root.findall(".//item")[:limit]):
+                title = item.find("title").text
+                headlines.append(f"{i+1}. {title}")
+            return "Here are the top headlines from BBC News:\n" + "\n".join(headlines)
+    except Exception as e:
+        logger.error(f"RSS News fallback failed: {e}")
+
+    return "Sorry, I couldn't fetch news updates right now."
