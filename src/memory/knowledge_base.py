@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import logging
 from typing import List, Dict, Any
@@ -98,3 +99,79 @@ class KnowledgeBase:
             result += f"• [File: {doc['filename']}] {doc['content'].strip()}\n"
         
         return result
+
+    def answer_query_locally(self, query: str, profile_manager=None) -> str:
+        """
+        Local RAG Fallback Engine:
+        Directly answers visitor inquiries using local markdown notes and profile data
+        when Gemini AI API quota is exhausted (429) or offline.
+        """
+        if not query or not query.strip():
+            return "How can I help you learn more about Li?"
+
+        clean_q = query.strip().lower()
+        profile = profile_manager.get_profile() if profile_manager else None
+        identity = profile.identity if profile else None
+
+        # 1. Contact / Social Links Fast Path
+        contact_triggers = ["contact", "email", "telegram", "github", "reach", "hire", "phone", "message", "social"]
+        if any(w in clean_q for w in contact_triggers):
+            email = getattr(identity, "email", "lichetsega@gmail.com") or "lichetsega@gmail.com"
+            telegram = getattr(identity, "telegram", "https://t.me/Lichetsega") or "https://t.me/Lichetsega"
+            github = getattr(identity, "github", "https://github.com/Lichetsega") or "https://github.com/Lichetsega"
+            return (
+                f"You can reach Li directly via her primary contact channels:\n"
+                f"• Email: {email}\n"
+                f"• Telegram: {telegram}\n"
+                f"• GitHub: {github}\n\n"
+                f"Feel free to get in touch for collaborations, inquiries, or discussions!"
+            )
+
+        # 2. Location / Origin Fast Path
+        if any(w in clean_q for w in ["where is", "location", "based", "living", "live", "hometown", "country"]):
+            loc = getattr(identity, "location", "Jimma / Woliso, Ethiopia") or "Jimma / Woliso, Ethiopia"
+            return f"Li is currently based in {loc}."
+
+        # 3. Document Notes Search (Extract relevant snippets)
+        documents = self.load_documents()
+        stop_words = {
+            "what", "when", "where", "which", "who", "whom", "this", "that", "these", "those",
+            "have", "has", "had", "would", "should", "could", "the", "and", "but", "with",
+            "about", "into", "through", "during", "before", "after", "tell", "show", "give",
+            "does", "she", "her", "fiche", "liche", "projects"
+        }
+
+        query_words = [re.sub(r"[^\w]", "", w.lower()) for w in query.split()]
+        significant_keywords = [w for w in query_words if len(w) > 2 and w not in stop_words]
+
+        matched_snippets = []
+        if significant_keywords:
+            for doc in documents:
+                content = doc.get("content", "")
+                lines = [line.strip() for line in re.split(r"[\n•\-\*]+", content) if len(line.strip()) > 15]
+                for line in lines:
+                    line_lower = line.lower()
+                    score = sum(1 for kw in significant_keywords if kw in line_lower)
+                    if score > 0:
+                        matched_snippets.append((score, line))
+
+        if matched_snippets:
+            matched_snippets.sort(key=lambda x: x[0], reverse=True)
+            seen = set()
+            top_lines = []
+            for score, line in matched_snippets:
+                cleaned_line = line.strip(" -*•#")
+                if cleaned_line not in seen:
+                    seen.add(cleaned_line)
+                    top_lines.append(f"• {cleaned_line}")
+                if len(top_lines) >= 3:
+                    break
+
+            if top_lines:
+                return "Here is what I found in Li's portfolio records:\n" + "\n".join(top_lines)
+
+        # 4. Fallback if no relevant notes found
+        return (
+            "I don't have specific details on that in Li's portfolio records yet. "
+            "You can reach out to Li directly via Telegram (https://t.me/Lichetsega) or Email (lichetsega@gmail.com)!"
+        )

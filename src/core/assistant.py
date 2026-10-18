@@ -127,7 +127,20 @@ class AssistantCore:
             city = match.group(2).strip() if match else "London"
             return get_weather(city)
 
-        # 6. News Updates
+        # 6. Resume & CV Requests
+        if any(w in cmd for w in ["resume", "cv", "curriculum vitae"]):
+            return "You can view and download Li's CV / Resume directly here: [View & Download Li's Resume](/static/resume.html). You can also reach Li directly at lichetsega@gmail.com or via Telegram at https://t.me/Lichetsega."
+
+        # 7. Live GitHub Commits & Repository Queries
+        if any(w in cmd for w in ["recent commit", "latest commit", "recent commits", "latest commits", "git commit"]):
+            from src.services.github_service import get_latest_commits
+            return get_latest_commits("Li-s-Personal-Assistant", count=3)
+
+        if any(w in cmd for w in ["github repos", "list repos", "my repos", "public repos"]):
+            from src.services.github_service import list_user_repos
+            return list_user_repos()
+
+        # 8. News Updates
         if "news" in cmd or "headline" in cmd:
             return get_news(limit=4)
 
@@ -156,8 +169,9 @@ class AssistantCore:
         if "clear tasks" in cmd:
             return clear_tasks()
 
-        # Trigger Autonomous Background Fact Extraction
-        self.memory_extractor.extract_async(text, self.gemini)
+        # Autonomous Background Fact Extraction is disabled to preserve Gemini API quota on free tier
+        # (Visitors to the portfolio do not need automated personal fact extraction)
+        # self.memory_extractor.extract_async(text, self.gemini)
 
         # 9. Fallback to Gemini AI with Native Function Calling, RAG, & History Context
         logger.info("Routing query to Gemini AI with full multi-tier context & tools...")
