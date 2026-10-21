@@ -33,6 +33,20 @@ class AssistantCore:
         """Registers a callback for proactive background reminder alerts."""
         self.scheduler.register_callback(callback)
 
+    def _normalize_speech_input(self, text: str) -> str:
+        """Corrects common acoustic speech-to-text mishearings for domain terms."""
+        normalized = text
+        # INSA mishearings: 'party song', 'party saw', 'in saw', 'in sa', 'inside'
+        normalized = re.sub(r"\b(?:party\s+song|party\s+saw|in\s+saw|in\s+suh|in\s+sa)\b", "at INSA", normalized, flags=re.IGNORECASE)
+        normalized = re.sub(r"\binternship\s+(?:inside|in\s+sight)\b", "internship at INSA", normalized, flags=re.IGNORECASE)
+        # RAG mishearings
+        normalized = re.sub(r"\b(?:ragged|raggae)\b(?=\s*(?:agent|retrieval|project|system|chatbot|architecture))", "RAG", normalized, flags=re.IGNORECASE)
+        # Li / Liche mishearings
+        normalized = re.sub(r"\b(?:reach's|lisa's|lee's)\b", "Li's", normalized, flags=re.IGNORECASE)
+        # 'sleep with candidate' / 'make me sleep with' mishearing for 'makes Li a great candidate'
+        normalized = re.sub(r"\b(?:makes?\s+me\s+sleep\s+with|sleep\s+with)\b(?=\s*candidate)", "makes Li a great", normalized, flags=re.IGNORECASE)
+        return normalized
+
     def process_command(self, text: str) -> str:
         """
         Processes text command, applies security guardrails, and returns sanitized textual response.
@@ -40,7 +54,7 @@ class AssistantCore:
         if not text or not text.strip():
             return "I didn't catch that. Could you please repeat?"
 
-        clean_text = text.strip()
+        clean_text = self._normalize_speech_input(text.strip())
 
         # 1. Pre-execution Security Guardrail (Prompt Injection & Code Probing Defense)
         is_blocked, refusal_msg = security_guardrails.inspect_input(clean_text)
@@ -113,11 +127,12 @@ class AssistantCore:
             greeting = "Good morning!" if hour < 12 else ("Good afternoon!" if hour < 18 else "Good evening!")
             return f"{greeting} I'm Li's personal AI assistant. Ask me anything about Liche Tsegaye — her skills, projects, background, or how to get in touch!"
 
-        if "time" in cmd and "what" in cmd:
+        # 5. Time & Date (Strict word boundaries to prevent matching 'candidate', 'update', 'estimate')
+        if re.search(r"\bwhat(?:\s+is|\s+'s)?\s+(?:the\s+)?(?:current\s+)?time\b", cmd) or (cmd.startswith("time") and len(cmd.split()) <= 3):
             now_str = datetime.datetime.now().strftime("%I:%M %p")
             return f"The current time is {now_str}."
 
-        if "date" in cmd and "what" in cmd:
+        if re.search(r"\bwhat(?:\s+is|\s+'s)?\s+(?:the\s+)?(?:current\s+|today's\s+)?date\b", cmd) or (re.search(r"\btoday's\s+date\b", cmd) and len(cmd.split()) <= 4):
             today_str = datetime.datetime.now().strftime("%A, %B %d, %Y")
             return f"Today is {today_str}."
 

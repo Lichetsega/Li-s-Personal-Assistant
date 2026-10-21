@@ -6,6 +6,7 @@ load_dotenv()
 
 class Config:
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     OPENWEATHER_API_KEY: str = os.getenv("OPENWEATHER_API_KEY", "")
     NEWS_API_KEY: str = os.getenv("NEWS_API_KEY", "")
     

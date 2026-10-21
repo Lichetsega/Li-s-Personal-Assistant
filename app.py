@@ -2,7 +2,7 @@ import os
 import logging
 import asyncio
 from typing import List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from src.config import config
 from src.core.assistant import AssistantCore
+from src.services.whisper_service import groq_whisper_service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("FastAPIServer")
@@ -98,6 +99,38 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         logger.error(f"Error in chat_endpoint: {e}", exc_info=True)
         return ChatResponse(response="I encountered an unexpected issue while processing your request. Please try again.")
+
+class TranscribeResponse(BaseModel):
+    success: bool
+    text: str
+    engine: str
+
+@app.get("/api/transcribe/status")
+async def transcribe_status():
+    """Returns whether Groq cloud Whisper STT is available or if browser fallback should be used."""
+    return {"whisper_available": groq_whisper_service.is_available()}
+
+@app.post("/api/transcribe", response_model=TranscribeResponse)
+async def transcribe_audio_endpoint(file: UploadFile = File(...)):
+    """
+    Transcribes audio payload using Groq Whisper-large-v3 with domain vocabulary priming.
+    """
+    if not groq_whisper_service.is_available():
+        return TranscribeResponse(success=False, text="", engine="fallback")
+
+    try:
+        audio_bytes = await file.read()
+        if not audio_bytes or len(audio_bytes) < 100:
+            return TranscribeResponse(success=False, text="", engine="groq_whisper")
+
+        filename = file.filename or "recording.webm"
+        text = groq_whisper_service.transcribe(audio_bytes, filename=filename)
+        if text:
+            return TranscribeResponse(success=True, text=text, engine="groq_whisper")
+        return TranscribeResponse(success=False, text="", engine="groq_whisper")
+    except Exception as e:
+        logger.error(f"Error in transcribe endpoint: {e}", exc_info=True)
+        return TranscribeResponse(success=False, text="", engine="error")
 
 @app.websocket("/ws/chat")
 async def websocket_chat_endpoint(websocket: WebSocket):

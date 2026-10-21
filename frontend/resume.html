@@ -413,6 +413,63 @@
             }
         }
 
+        .project-actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .see-more-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 20px;
+            background: rgba(99, 102, 241, 0.16);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #c7d2fe;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .see-more-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+            border-color: var(--accent);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .github-all-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .github-all-btn:hover {
+            color: #38bdf8;
+            text-decoration: underline;
+        }
+
+        @media print {
+            .more-projects-container {
+                display: block !important;
+            }
+            .project-actions-row {
+                display: none !important;
+            }
+        }
+
         @media (max-width: 640px) {
             .resume-container {
                 padding: 30px 20px;
@@ -423,6 +480,10 @@
             }
             .name-title h1 {
                 font-size: 2rem;
+            }
+            .project-actions-row {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -582,6 +643,104 @@
                     <li>Guaranteed zero credential leakage across the network by transmitting only the first 5 characters of the hash prefix.</li>
                 </ul>
             </div>
+
+            <!-- Expandable Additional Projects -->
+            <div id="moreProjectsContainer" class="more-projects-container" style="display: none;">
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <span class="item-title">Hacker News Signal Filter & Scraper</span>
+                            <span class="item-subtitle"> — Content Aggregation & Curation</span>
+                        </div>
+                        <a href="https://github.com/Lichetsega/hacker_news-scraper" target="_blank" rel="noopener" class="github-pill">
+                            <i class="fa-brands fa-github"></i> View Repo
+                        </a>
+                    </div>
+                    <div class="badges">
+                        <span class="badge">Python</span>
+                        <span class="badge cyan">BeautifulSoup</span>
+                        <span class="badge emerald">Web Scraping</span>
+                        <span class="badge">Data Filtering</span>
+                    </div>
+                    <ul class="item-bullets">
+                        <li>Dynamic multi-page web crawler aggregating top engineering discussions and filtering articles with scores &gt; 99.</li>
+                        <li>Automated visual HTML report generation with vote-weighted ranking and respectful request throttling.</li>
+                    </ul>
+                </div>
+
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <span class="item-title">Document Automation & PDF Tool Suite</span>
+                            <span class="item-subtitle"> — Programmatic Document Utilities</span>
+                        </div>
+                        <a href="https://github.com/Lichetsega/pdf_merger" target="_blank" rel="noopener" class="github-pill">
+                            <i class="fa-brands fa-github"></i> View Repo
+                        </a>
+                    </div>
+                    <div class="badges">
+                        <span class="badge">Python</span>
+                        <span class="badge cyan">PyPDF2</span>
+                        <span class="badge emerald">Automation</span>
+                        <span class="badge">CLI</span>
+                    </div>
+                    <ul class="item-bullets">
+                        <li>Command-line automation scripts for batch PDF document merging, dynamic multi-page watermarking, and format validation.</li>
+                    </ul>
+                </div>
+
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <span class="item-title">Interactive JavaScript Games & Audio Suite</span>
+                            <span class="item-subtitle"> — Browser Games & Audio Synthesis</span>
+                        </div>
+                        <a href="https://github.com/Lichetsega/dice-game" target="_blank" rel="noopener" class="github-pill">
+                            <i class="fa-brands fa-github"></i> View Games
+                        </a>
+                    </div>
+                    <div class="badges">
+                        <span class="badge">JavaScript (ES6+)</span>
+                        <span class="badge cyan">DOM Manipulation</span>
+                        <span class="badge emerald">Web Audio API</span>
+                        <span class="badge">Game Loops</span>
+                    </div>
+                    <ul class="item-bullets">
+                        <li>Developed a collection of responsive browser-based games including <strong>Dice Game</strong>, <strong>Guess My Number</strong>, and <strong>World Quiz</strong> featuring state machines and win-condition logic.</li>
+                        <li>Built an interactive virtual <strong>Drum Kit</strong> utilizing keyboard event listeners and asynchronous audio synthesis for zero-latency auditory feedback.</li>
+                    </ul>
+                </div>
+
+                <div class="item">
+                    <div class="item-header">
+                        <div>
+                            <span class="item-title">Batch Image Format Converter</span>
+                            <span class="item-subtitle"> — Image Processing Utility</span>
+                        </div>
+                        <a href="https://github.com/Lichetsega/JPGtoPNG-using-python" target="_blank" rel="noopener" class="github-pill">
+                            <i class="fa-brands fa-github"></i> View Repo
+                        </a>
+                    </div>
+                    <div class="badges">
+                        <span class="badge">Python</span>
+                        <span class="badge cyan">Pillow / PIL</span>
+                        <span class="badge emerald">Image Processing</span>
+                    </div>
+                    <ul class="item-bullets">
+                        <li>High-speed batch image converter transforming and optimizing JPG to lossless PNG formats with directory traversal.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- See More / GitHub Action Row -->
+            <div class="project-actions-row">
+                <button type="button" id="toggleMoreProjectsBtn" class="see-more-btn" onclick="toggleMoreProjects()">
+                    <i class="fa-solid fa-chevron-down" id="toggleIcon"></i> <span id="toggleText">See More Projects (4)</span>
+                </button>
+                <a href="https://github.com/Lichetsega?tab=repositories" target="_blank" rel="noopener" class="github-all-btn">
+                    <i class="fa-brands fa-github"></i> Explore All Repositories on GitHub <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            </div>
         </section>
 
         <!-- Education -->
@@ -602,5 +761,23 @@
             </div>
         </section>
     </div>
+
+    <script>
+        function toggleMoreProjects() {
+            const container = document.getElementById('moreProjectsContainer');
+            const icon = document.getElementById('toggleIcon');
+            const text = document.getElementById('toggleText');
+
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                icon.className = 'fa-solid fa-chevron-up';
+                text.innerText = 'Show Fewer Projects';
+            } else {
+                container.style.display = 'none';
+                icon.className = 'fa-solid fa-chevron-down';
+                text.innerText = 'See More Projects (4)';
+            }
+        }
+    </script>
 </body>
 </html>
