@@ -27,6 +27,17 @@
             border: 1px solid rgba(99, 102, 241, 0.6) !important;
             color: #ffffff !important;
         }
+        .linkedin-btn {
+            background: rgba(10, 102, 194, 0.25) !important;
+            border: 1px solid rgba(10, 102, 194, 0.55) !important;
+            color: #38bdf8 !important;
+        }
+        .linkedin-btn:hover {
+            background: rgba(10, 102, 194, 0.45) !important;
+            border-color: #38bdf8 !important;
+            color: #ffffff !important;
+            transform: translateY(-1px) !important;
+        }
         .sound-toggle-btn {
             background: rgba(255, 255, 255, 0.08) !important;
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -39,10 +50,13 @@
         <!-- Header -->
         <header class="header">
             <div class="logo">
-                <i class="fa-solid me-2 fa-robot"></i>
+                <img src="/static/profile.jpg" alt="Liche Tsegaye" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid #06b6d4; margin-right: 10px; box-shadow: 0 0 10px rgba(6,182,212,0.4);">
                 <span>Li's Assistance</span>
             </div>
             <div class="header-actions">
+                <a href="https://www.linkedin.com/in/liche-tsegaye-05a25b361" target="_blank" rel="noopener" class="header-btn linkedin-btn" id="linkedinBtn" title="Connect with Li on LinkedIn">
+                    <i class="fa-brands fa-linkedin"></i> <span>LinkedIn</span>
+                </a>
                 <a href="/static/resume.html" target="_blank" class="header-btn resume-btn" id="resumeBtn" title="View & Download Li's Resume">
                     <i class="fa-solid fa-file-pdf"></i> <span>Resume / CV</span>
                 </a>

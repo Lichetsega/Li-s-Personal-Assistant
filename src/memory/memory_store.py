@@ -42,6 +42,28 @@ class MemoryStore:
                     );
                 """)
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_category ON memories(category);")
+
+                # Auto-seed initial portfolio facts if database is fresh / deployed on ephemeral container
+                cur = conn.execute("SELECT COUNT(*) FROM memories")
+                if cur.fetchone()[0] == 0:
+                    default_facts = [
+                        ("Liche Tsegaye (Li) is a 5th-year Software Engineering graduating student at Jimma University.", "FACT"),
+                        ("Li completed a 6-month AI Engineering internship at INSA in the AI Department developing RAG & Agentic RAG.", "FACT"),
+                        ("Li interned at Prodigy InfoTech as a Web Development Intern building responsive web applications.", "FACT"),
+                        ("Li architected the Visit Ethiopia Agentic RAG tourism intelligence system with ChromaDB and LangChain.", "PROJECT"),
+                        ("Li built Li's AI Virtual Voice Assistant with Google Gemini, Groq Whisper-large-v3, and multi-tier memory.", "PROJECT"),
+                        ("Li engineered a credential exposure security auditor using SHA-1 hashing and the k-Anonymity privacy model.", "PROJECT"),
+                        ("Li specializes in Python AI backend engineering (FastAPI, PyTorch, LangChain, RAG) and MERN full-stack development.", "SKILL"),
+                        ("Li is reachable via LinkedIn (https://www.linkedin.com/in/liche-tsegaye-05a25b361), Email (lichetsega@gmail.com), WhatsApp (+251 945 733 554), and Telegram (@Lichetsega).", "CONTACT"),
+                    ]
+                    now = time.time()
+                    for fact_text, cat in default_facts:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO memories (category, fact_text, confidence_score, created_at, updated_at) VALUES (?, ?, 1.0, ?, ?)",
+                            (cat, fact_text, now, now)
+                        )
+                    logger.info("Successfully seeded default portfolio facts into SQLite memory database.")
+
                 conn.commit()
             logger.info(f"Initialized SQLite Memory Database at {self.db_path}")
         except Exception as e:

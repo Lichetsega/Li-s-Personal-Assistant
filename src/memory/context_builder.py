@@ -27,7 +27,7 @@ class ContextBuilder:
         self.knowledge_base = knowledge_base or KnowledgeBase()
         self.conversation_history = conversation_history or ConversationHistory()
 
-    def build_system_instruction(self, user_query: str = "") -> str:
+    def build_system_instruction(self, user_query: str = "", conversation_history: Optional[ConversationHistory] = None) -> str:
         """
         Dynamically constructs the system instruction context.
         """
@@ -69,10 +69,14 @@ class ContextBuilder:
         contact_items = []
         if getattr(identity, "github", None):
             contact_items.append(f"GitHub: {identity.github}")
-        if getattr(identity, "email", None):
-            contact_items.append(f"Email: {identity.email}")
+        if getattr(identity, "linkedin", None):
+            contact_items.append(f"LinkedIn: {identity.linkedin}")
         if getattr(identity, "telegram", None):
             contact_items.append(f"Telegram: {identity.telegram}")
+        if getattr(identity, "whatsapp", None):
+            contact_items.append(f"WhatsApp: {identity.whatsapp}")
+        if getattr(identity, "email", None):
+            contact_items.append(f"Email: {identity.email}")
         if getattr(identity, "phone", None):
             contact_items.append(f"Phone: {identity.phone}")
         if contact_items:
@@ -105,8 +109,9 @@ class ContextBuilder:
             if doc_context:
                 instruction += doc_context + "\n"
 
-        # 6. Multi-Turn Session History (Option 4 Engine)
-        history_context = self.conversation_history.get_formatted_history()
+        # 6. Multi-Turn Session History (Isolated Per Visitor Session)
+        active_history = conversation_history or self.conversation_history
+        history_context = active_history.get_formatted_history()
         if history_context:
             instruction += history_context
 

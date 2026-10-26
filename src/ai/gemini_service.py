@@ -2,7 +2,7 @@ import os
 import sys
 import logging
 import warnings
-from typing import Optional, List
+from typing import Optional, List, Any
 
 # Suppress google.generativeai deprecation warning clutter in terminal logs
 warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
@@ -17,10 +17,9 @@ from src.security.guardrails import security_guardrails
 logger = logging.getLogger("GeminiService")
 
 MODEL_CANDIDATES = [
-    "gemini-flash-latest",
     "gemini-2.5-flash-lite",
     "gemini-2.5-flash",
-    "gemini-pro-latest"
+    "gemini-1.5-flash"
 ]
 
 class GeminiService:
@@ -82,7 +81,7 @@ class GeminiService:
             logger.error(f"Failed to initialize any Gemini AI SDK: {e}")
             self.client = None
 
-    def generate_response(self, user_prompt: str) -> str:
+    def generate_response(self, user_prompt: str, conversation_history: Optional[Any] = None) -> str:
         """Generate response with multi-key rotation and automatic local RAG fallback."""
         # 1. Pre-execution Security Check (Input Guardrail)
         is_blocked, refusal_msg = security_guardrails.inspect_input(user_prompt)
@@ -99,7 +98,7 @@ class GeminiService:
             return security_guardrails.filter_output(local_reply)
 
         # Build dynamic system instruction with Profile + Memories + Notes RAG + Multi-Turn History + Live Environment
-        sys_instruction = self.context_builder.build_system_instruction(user_prompt)
+        sys_instruction = self.context_builder.build_system_instruction(user_prompt, conversation_history=conversation_history)
         last_error = None
 
         # Attempt generation across available models and keys

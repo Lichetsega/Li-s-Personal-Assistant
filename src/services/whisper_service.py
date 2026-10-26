@@ -1,20 +1,35 @@
 import io
+import re
 import logging
 from typing import Optional
 from src.config import config
 
 logger = logging.getLogger("GroqWhisperService")
 
-# Natural sentence prompt to condition Whisper's language model for developer & personal queries
+# Domain vocabulary prompt to prime Whisper with accurate portfolio & technical terms
 DOMAIN_PROMPT = (
-    "The following is a spoken conversation with and about Liche Tsegaye, "
-    "a software engineer who completed an internship at INSA and developed the Visit Ethiopia Agentic RAG system."
+    "Liche Tsegaye, INSA, Agentic RAG, li's , li ,Python, FastAPI, Woliso, Addis Ababa, "
+    "Jimma University, ChromaDB, SQLite, Gemini, Full-Stack, Software Engineer."
 )
+
+# Common Whisper hallucinations triggered by silent or truncated audio
+HALLUCINATION_PATTERNS = [
+    r"^thank\s+you\s+(?:very\s+much\s+)?for\s+(?:watching|listening|running).*$",
+    r"^thanks\s+(?:very\s+much\s+)?for\s+(?:watching|listening|running).*$",
+    r"^thanks\s+very\s+great.*$",
+    r"^click\s+(?:jpeg|here|link|the\s+link).*$",
+    r"^please\s+(?:like\s+and\s+)?subscribe.*$",
+    r"^thank\s+you[\.\!\s]*$",
+    r"^thanks[\.\!\s]*$",
+    r"^bye[\.\!\s]*$",
+    r"^you[\.\!\s]*$",
+]
 
 class GroqWhisperService:
     """
     High-fidelity Cloud Speech-to-Text service powered by Groq's hosted Whisper-large-v3.
-    Uses model-level acoustic metrics and natural contextual priming.
+    Provides sub-200ms ultra-accurate transcription with custom domain keyword boosting
+    and hallucination defense for quiet/truncated audio clips.
     """
     def __init__(self):
         self.api_key = config.GROQ_API_KEY
@@ -34,10 +49,20 @@ class GroqWhisperService:
                 self._client = None
         return self._client
 
-    def transcribe(self, audio_bytes: bytes, filename: str = "recording.wav") -> Optional[str]:
+    def _is_hallucination(self, text: str) -> bool:
+        """Checks if transcription is a generic Whisper artifact from quiet audio."""
+        if not text or len(text.strip()) < 3:
+            return True
+        clean = text.strip().lower()
+        for pattern in HALLUCINATION_PATTERNS:
+            if re.search(pattern, clean, flags=re.IGNORECASE):
+                return True
+        return False
+
+    def transcribe(self, audio_bytes: bytes, filename: str = "recording.webm") -> Optional[str]:
         """
-        Transcribes audio bytes using Groq Whisper-large-v3.
-        Evaluates Whisper's native acoustic segments and confidence scores.
+        Transcribes raw audio bytes using Groq whisper-large-v3 with domain vocabulary priming.
+        Filters out silence-induced subtitle hallucinations.
         """
         client = self._get_client()
         if not client:
@@ -46,29 +71,20 @@ class GroqWhisperService:
 
         try:
             audio_file = (filename, audio_bytes)
-            result = client.audio.transcriptions.create(
+            transcription = client.audio.transcriptions.create(
                 model="whisper-large-v3",
                 file=audio_file,
                 prompt=DOMAIN_PROMPT,
-                response_format="verbose_json",
+                response_format="json",
                 language="en",
                 temperature=0.0
             )
-
-            text = (result.text or "").strip()
-            if not text:
+            text = transcription.text.strip()
+            
+            # Defense against Whisper silence hallucination
+            if self._is_hallucination(text):
+                logger.warning(f"Discarded Whisper silence hallucination: '{text}'")
                 return None
-
-            # Whisper native model metrics: Check if model classified audio as silence/noise
-            if hasattr(result, "segments") and result.segments:
-                avg_no_speech = sum(getattr(s, "no_speech_prob", 0.0) for s in result.segments) / len(result.segments)
-                avg_compression = sum(getattr(s, "compression_ratio", 1.0) for s in result.segments) / len(result.segments)
-                
-                # If the neural net determines the segment contains no speech (> 65% probability)
-                # or entered a repetitive generation loop (compression ratio > 2.4)
-                if avg_no_speech > 0.65 or avg_compression > 2.4:
-                    logger.info(f"Whisper acoustic evaluation: Non-speech audio detected (no_speech_prob: {avg_no_speech:.2f}).")
-                    return None
 
             logger.info(f"Groq Whisper transcription success: {text}")
             return text

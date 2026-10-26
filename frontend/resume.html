@@ -111,10 +111,31 @@
         .header-top {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 16px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header-profile-group {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .resume-avatar {
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.45);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .resume-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 35px rgba(6, 182, 212, 0.65);
         }
 
         .name-title h1 {
@@ -498,9 +519,12 @@
         <!-- Header -->
         <header class="resume-header">
             <div class="header-top">
-                <div class="name-title">
-                    <h1>Liche Tsegaye (Li)</h1>
-                    <h2>Software Engineer & AI/ML Developer</h2>
+                <div class="header-profile-group">
+                    <img src="profile.jpg" alt="Liche Tsegaye" class="resume-avatar">
+                    <div class="name-title">
+                        <h1>Liche Tsegaye (Li)</h1>
+                        <h2>Software Engineer & AI/ML Developer</h2>
+                    </div>
                 </div>
                 <div class="status-badge">
                     <span class="pulse-dot"></span> Open to Opportunities
@@ -509,6 +533,8 @@
             <div class="contact-info">
                 <span class="contact-chip"><i class="fa-solid fa-location-dot"></i> Jimma / Woliso, Ethiopia</span>
                 <a href="mailto:lichetsega@gmail.com" class="contact-chip"><i class="fa-solid fa-envelope"></i> lichetsega@gmail.com</a>
+                <a href="https://api.whatsapp.com/send/?phone=251945733554" target="_blank" rel="noopener" class="contact-chip"><i class="fa-brands fa-whatsapp"></i> +251 945 733 554</a>
+                <a href="https://www.linkedin.com/in/liche-tsegaye-05a25b361" target="_blank" rel="noopener" class="contact-chip"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>
                 <a href="https://t.me/Lichetsega" target="_blank" rel="noopener" class="contact-chip"><i class="fa-brands fa-telegram"></i> @Lichetsega</a>
                 <a href="https://github.com/Lichetsega" target="_blank" rel="noopener" class="contact-chip"><i class="fa-brands fa-github"></i> github.com/Lichetsega</a>
             </div>
@@ -565,6 +591,26 @@
                     <li>Designed autonomous multi-agent routing systems incorporating intent detection, document evaluation, and contextual memory.</li>
                     <li>Implemented hybrid retrieval combining dense vector embeddings with sparse keyword search and phonetic fuzzy matching.</li>
                     <li>Collaborated on security-first AI pipelines, API rate-limit resilience, and round-robin multi-key failover managers.</li>
+                </ul>
+            </div>
+
+            <div class="item">
+                <div class="item-header">
+                    <div>
+                        <span class="item-title">Prodigy InfoTech</span>
+                        <span class="item-subtitle"> — Web Development Intern</span>
+                    </div>
+                    <span class="item-date">Remote</span>
+                </div>
+                <div class="badges">
+                    <span class="badge">JavaScript</span>
+                    <span class="badge cyan">Responsive Design</span>
+                    <span class="badge emerald">HTML5/CSS3</span>
+                    <span class="badge">DOM Manipulation</span>
+                </div>
+                <ul class="item-bullets">
+                    <li>Developed responsive front-end applications, real estate landing pages, interactive game interfaces, and timer utilities.</li>
+                    <li>Engineered cross-browser compatible layouts adhering to modern UI/UX design standards and accessibility guidelines.</li>
                 </ul>
             </div>
         </section>

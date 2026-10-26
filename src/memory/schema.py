@@ -14,6 +14,9 @@ class MemoryCategory(str, Enum):
     GOAL = "GOAL"
     RELATIONSHIP = "RELATIONSHIP"
     WORKFLOW = "WORKFLOW"
+    PROJECT = "PROJECT"
+    SKILL = "SKILL"
+    CONTACT = "CONTACT"
 
 if HAS_PYDANTIC:
     class UserIdentity(BaseModel):

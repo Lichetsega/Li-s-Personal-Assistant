@@ -1,6 +1,7 @@
 import time
+import threading
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger("ConversationHistory")
 
@@ -46,7 +47,7 @@ class ConversationHistory:
 
         formatted = "--- RECENT CONVERSATION HISTORY ---\n"
         for msg in self.history[:-1]:  # Exclude current prompt if already added
-            role_label = "User" if msg["role"] == "user" else "Assistant"
+            role_label = "Visitor" if msg["role"] == "user" else "Assistant"
             formatted += f"{role_label}: {msg['content']}\n"
         return formatted + "\n"
 
@@ -54,3 +55,40 @@ class ConversationHistory:
         """Clears active session history."""
         self.history.clear()
         logger.info("Cleared conversation history.")
+
+
+class SessionHistoryManager:
+    """
+    Thread-safe session history manager that isolates conversation context
+    per visitor based on a unique session_id.
+    Automatically purges expired sessions to prevent memory bloat on deployed servers.
+    """
+    def __init__(self, ttl_seconds: int = 3600):
+        self.ttl = ttl_seconds
+        self.sessions: Dict[str, Dict[str, Any]] = {}
+        self._lock = threading.Lock()
+
+    def get_history(self, session_id: Optional[str]) -> ConversationHistory:
+        """Returns the isolated ConversationHistory for a given visitor session."""
+        sid = (session_id or "default_session").strip()
+        now = time.time()
+        with self._lock:
+            self._cleanup_expired(now)
+            if sid not in self.sessions:
+                self.sessions[sid] = {
+                    "history": ConversationHistory(),
+                    "last_active": now
+                }
+            else:
+                self.sessions[sid]["last_active"] = now
+            return self.sessions[sid]["history"]
+
+    def _cleanup_expired(self, now: float):
+        """Removes sessions inactive for longer than TTL."""
+        expired = [sid for sid, d in self.sessions.items() if (now - d["last_active"]) > self.ttl]
+        for sid in expired:
+            del self.sessions[sid]
+        if expired:
+            logger.info(f"Cleaned up {len(expired)} expired visitor sessions.")
+
+session_manager = SessionHistoryManager()

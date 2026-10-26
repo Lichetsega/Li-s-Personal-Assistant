@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let finalTranscript = '';
     let interimTranscript = '';
     let silenceTimeout = null;
-    const SILENCE_DELAY_MS = 1400; // 1.4s of quiet auto-submits sentence
+    const SILENCE_DELAY_MS = 750; // 0.75s of quiet auto-submits sentence for fast responses
 
     // Spacebar Push-to-Talk State
     let spacebarHeld = false;
@@ -490,10 +490,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Stop / Interrupt Assistant Speaking
+    // Mobile Device Detection & Cloud Audio Streaming State
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let cloudAudioPlayer = null;
+
+    function playCloudAudioStream(cleanText) {
+        if (isSoundMuted || !cleanText) return;
+
+        if (cloudAudioPlayer) {
+            cloudAudioPlayer.pause();
+            cloudAudioPlayer = null;
+        }
+
+        const ttsUrl = `/api/tts?text=${encodeURIComponent(cleanText)}`;
+        cloudAudioPlayer = new Audio(ttsUrl);
+
+        cloudAudioPlayer.onplay = () => {
+            voiceOrb.classList.add('speaking');
+            if (stopSpeechBtn) stopSpeechBtn.style.display = 'inline-flex';
+            statusText.innerText = "Speaking with Li's voice... (Click 'Stop Talking' or press Esc)";
+        };
+
+        cloudAudioPlayer.onended = () => {
+            voiceOrb.classList.remove('speaking');
+            if (stopSpeechBtn) stopSpeechBtn.style.display = 'none';
+            statusText.innerText = 'Click microphone or hold Spacebar to speak with Li';
+            cloudAudioPlayer = null;
+        };
+
+        cloudAudioPlayer.onerror = (e) => {
+            console.warn("Cloud TTS playback error:", e);
+            voiceOrb.classList.remove('speaking');
+            if (stopSpeechBtn) stopSpeechBtn.style.display = 'none';
+            cloudAudioPlayer = null;
+        };
+
+        cloudAudioPlayer.play().catch(err => {
+            console.info("Autoplay policy notice for audio:", err);
+            voiceOrb.classList.remove('speaking');
+            if (stopSpeechBtn) stopSpeechBtn.style.display = 'none';
+        });
+    }
+
+    // Stop / Interrupt Assistant Speaking (both browser Web Speech and Cloud Audio Stream)
     function stopSpeaking() {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
+        }
+        if (cloudAudioPlayer) {
+            cloudAudioPlayer.pause();
+            cloudAudioPlayer.currentTime = 0;
+            cloudAudioPlayer = null;
         }
         voiceOrb.classList.remove('speaking');
         if (stopSpeechBtn) stopSpeechBtn.style.display = 'none';
@@ -506,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clicking the voice orb while speaking also interrupts speech immediately
     voiceOrb.addEventListener('click', () => {
-        if (voiceOrb.classList.contains('speaking') || ('speechSynthesis' in window && window.speechSynthesis.speaking)) {
+        if (voiceOrb.classList.contains('speaking') || ('speechSynthesis' in window && window.speechSynthesis.speaking) || cloudAudioPlayer) {
             stopSpeaking();
         }
     });
@@ -514,27 +561,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pressing Escape key at any time interrupts speaking
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' || e.code === 'Escape') {
-            if (voiceOrb.classList.contains('speaking') || ('speechSynthesis' in window && window.speechSynthesis.speaking)) {
+            if (voiceOrb.classList.contains('speaking') || ('speechSynthesis' in window && window.speechSynthesis.speaking) || cloudAudioPlayer) {
                 stopSpeaking();
             }
         }
     });
 
-    // Audio-Reactive Web Speech Synthesis with Orb Pulse Animation & Stop Controls
+    // Audio-Reactive Voice Synthesis with Mobile Cloud Fallback & Orb Pulse
     function speakText(text) {
         if (isSoundMuted) return; // Silent mode honored
-        if ('speechSynthesis' in window) {
+
+        // Strip markdown, URLs, and code blocks for smooth TTS speech
+        const cleanText = text
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/https?:\/\/\S+/g, '')
+            .replace(/[*_#`•]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!cleanText) return;
+
+        // Mobile browsers (iOS Safari, Android Chrome) heavily restrict Web Speech API voices.
+        // Fall back to cloud MP3 streaming for mobile or when Web Speech is unavailable.
+        if (isMobileDevice || !('speechSynthesis' in window)) {
+            playCloudAudioStream(cleanText);
+            return;
+        }
+
+        try {
             window.speechSynthesis.cancel();
-
-            // Strip markdown, URLs, and code blocks for smooth TTS speech
-            const cleanText = text
-                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-                .replace(/https?:\/\/\S+/g, '')
-                .replace(/[*_#`•]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-
-            if (!cleanText) return;
 
             const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.rate = 1.0;
@@ -557,12 +612,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusText.innerText = 'Click microphone or hold Spacebar to speak with Li';
             };
 
-            utterance.onerror = () => {
+            utterance.onerror = (e) => {
+                console.warn("Browser SpeechSynthesis error, trying Cloud TTS fallback:", e);
                 voiceOrb.classList.remove('speaking');
                 if (stopSpeechBtn) stopSpeechBtn.style.display = 'none';
+                playCloudAudioStream(cleanText);
             };
 
             window.speechSynthesis.speak(utterance);
+        } catch (err) {
+            console.warn("SpeechSynthesis exception, falling back to Cloud TTS:", err);
+            playCloudAudioStream(cleanText);
         }
     }
 
@@ -703,6 +763,16 @@ document.addEventListener('DOMContentLoaded', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
+    // Visitor Session Isolation (keeps conversation history context isolated per browser tab)
+    function getVisitorSessionId() {
+        let sid = sessionStorage.getItem('li_visitor_session_id');
+        if (!sid) {
+            sid = 'vis_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+            sessionStorage.setItem('li_visitor_session_id', sid);
+        }
+        return sid;
+    }
+
     async function sendMessage(textOverride, inputMode = 'text') {
         let query = (textOverride || userInput.value).trim();
         if (!query) return;
@@ -725,8 +795,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: query })
+                body: JSON.stringify({
+                    message: query,
+                    session_id: getVisitorSessionId()
+                })
             });
+
+            if (response.status === 429) {
+                const errData = await response.json();
+                const rateMsg = errData.detail || "Rate limit reached. Please wait a moment before sending another query.";
+                appendMessage('assistant', rateMsg);
+                statusText.innerText = 'Rate limited. Please wait a few seconds.';
+                return;
+            }
 
             const data = await response.json();
             const reply = data.response || "No response received.";

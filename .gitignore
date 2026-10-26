@@ -11,11 +11,9 @@ venv/
 env/
 ENV/
 
-# Local User Data & Memory (Git Privacy Protection)
-src/data/user_profile.json
+# Local Database & Secrets (Memory is auto-seeded on cloud boot)
 src/data/memory.db
-src/data/notes/*
-!src/data/notes/example_notes.md
+
 
 # IDE & OS
 .vscode/
