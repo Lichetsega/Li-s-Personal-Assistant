@@ -210,16 +210,12 @@ python -m tests.test_security
 
 ## ☁️ Deployment
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Lichetsega/Li-s-Personal-Assistant)
-
 The project is pre-configured for one-click deployment on **Render**:
-- **Blueprint Spec**: [`render.yaml`](file:///render.yaml) automatically configures the web service, Python runtime, port binding, and required environment variables.
-- **ASGI Process**: [`Procfile`](file:///Procfile) defines the production web server:
+- `render.yaml` defines the web service configuration.
+- `Procfile` specifies the ASGI web worker:
   ```text
-  web: uvicorn app:app --host 0.0.0.0 --port $PORT
+  web: uvicorn app.py:app --host 0.0.0.0 --port $PORT
   ```
-- **Direct 1-Click URL**: [Deploy Li's Assistant on Render](https://render.com/deploy?repo=https://github.com/Lichetsega/Li-s-Personal-Assistant)
-
 
 ---
 
